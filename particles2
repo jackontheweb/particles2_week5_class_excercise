@@ -1,0 +1,96 @@
+import processing.sound.*;
+AudioIn in;
+Amplitude analyzer; 
+
+float t = noise(4000) * width;
+float particleNoise = t;
+int noisee = int(particleNoise);
+
+GenParticle[] p = new GenParticle[noisee];
+
+void setup() {
+  smooth();
+  size(600, 600);
+  noStroke();
+  for (int i = 0; i < p.length; i++) {
+    float velX = random(-1, 1);
+    float velY = -i;
+    // Inputs: x, y, x-velocity, y-velocity, radius, origin x, origin y
+    p[i] = new GenParticle(width/2, height/2, velX, velY, 5.0, width/2, height/2);
+  }
+  
+ // Create the Input stream
+  in = new AudioIn(this, 0);
+  in.start();
+  //println(in);
+  analyzer = new Amplitude(this);
+    analyzer.input(in); 
+  
+}
+
+void draw() {
+fill(noise(50),random(80));
+rect(0, 0, width, height);
+ // fill(255, 60);
+  for (GenParticle part : p) {
+    part.update();
+    part.regenerate();
+    part.display(); 
+  }
+  
+}
+
+class GenParticle extends Particle {
+  float originX, originY;
+
+
+  GenParticle(int xpos, int ypos, float velx, float vely, float r, float ox, float oy) {
+    super(xpos, ypos, velx, vely, r);
+    originX = ox;
+    originY = oy;
+  }
+  
+  void regenerate() {
+   float vol = analyzer.analyze();
+    if ((x > width+radius) || (x < -radius) || (y > height+radius) || (y < -radius)) {
+      x = mouseX;
+      y = mouseY;
+      vx = random(-1.0, vol);
+      vy = random(-4.0, -vol);
+    } 
+  }
+}
+
+class Particle {  
+  float x, y;           // The x- and y-coordinates
+  float vx, vy;         // The x- and y-velocities 
+  float radius;         // Particle radius
+  float gravity = 0.2;
+
+  Particle(int xpos, int ypos, float velx, float vely, float r) {
+    x = xpos;
+    y = ypos;
+    vx = velx;
+    vy = vely;
+    radius = r;
+  }
+
+  void update() {
+  // for (int gravity = 0.1; gravity < height; i += 5) {
+    vy += gravity;
+    y += vy;
+    x += vx;
+  }
+  
+  void display() {
+    // Get the overall volume (between 0 and 1.0)
+  float vol = analyzer.analyze();
+  if (vol < 0.4) {
+    ellipse(x, y, random(30,40)+vol*200, random(30,40)+vol*200);
+     fill(mouseX,mouseY,random(255),random(255));
+  } else {
+     rect(x, y, 40+vol*200, 40+vol*200);
+     fill(mouseX,mouseY,random(255),random(255));
+  }
+  }
+}
